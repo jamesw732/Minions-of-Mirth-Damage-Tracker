@@ -13,6 +13,7 @@ def start(calc):
     track = True
     calc.setLastLine()
     calc.setName(namebox.get())
+    calc.times = [-1, -1]
     update(calc)
 
 def update(calc): # update the state of the calc and GUI based on new game log content
