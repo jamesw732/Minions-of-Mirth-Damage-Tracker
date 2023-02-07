@@ -3,6 +3,8 @@ from tkinter import ttk
 from colors import *
 from calc import *
 
+#pyinstaller -F -n DamageTracker --noconsole main.py
+
 def start(calc):
     for entry in entries:
         entry.delete(0, END)
