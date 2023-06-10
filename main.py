@@ -11,9 +11,9 @@ def start(calc):
         entry.insert(0, 0)
     global track
     track = True
+    calc.reset()
     calc.setLastLine()
     calc.setName(namebox.get())
-    calc.times = [-1, -1]
     update(calc)
 
 def update(calc): # update the state of the calc and GUI based on new game log content
