@@ -32,7 +32,6 @@ def update(calc): # update the state of the calc and GUI based on new game log c
     root.after(1000, lambda: update(calc))
 
 def displayStats(calc): # displays current state of the calc to the GUI
-    Label(root, width=10, bg=grey, fg=text).grid(column=4, row=0)
     entries[0].insert(0, calc.damage) # total damage
     dmgList = calc.damagelist
     entries[1].insert(0, len(dmgList)) # number of hits
