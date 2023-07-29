@@ -2,6 +2,16 @@ from re import split
 
 class Calc:
     def __init__(self, pname, logpath, inactivity):
+        """
+        self.pname: Player name, str
+        self.namelist: Handling for multi-word names, list[str]
+        self.inactivity: Inactivity timer, int
+        self.damage: total damage dealt while tracking, int
+        self.damagelist: list of all damage dealt, list[int]
+        self.times: first and last times that we're tracking, list[int]
+        self.path: path to game.txt, str
+        self.lastLine: index of current last line in game.txt
+        """
         self.pname = pname
         self.namelist = pname.split()
         self.inactivity = inactivity
@@ -15,13 +25,15 @@ class Calc:
         self.pname = name
         self.namelist = name.split()
 
-    def reset(self): # resets damage stats to zero
+    def reset(self):
+        # Resets damage and time data
         self.damage = 0
         self.damagelist.clear()
         self.times = [-1, -1]
         return
     
     def updateTime(self, time):
+        # Voodoo magic that updates the times list
         if self.times[0] == -1: # data is empty
             self.times[0] = time
             self.times[1] = time
@@ -36,13 +48,15 @@ class Calc:
     def resetLastLine(self):
         self.lastLine = 0
 
-    def setLastLine(self): # set new last line
+    def setLastLine(self):
+        # Set new last line
         with open(self.path) as gamelog:
             self.lastLine = len(gamelog.readlines())-1
         gamelog.close()
         return
 
     def getLines(self):
+        # Get all lines since self.lastLine
         lines = []
         with open(self.path) as gamelog:
             allLines = gamelog.readlines()
@@ -55,16 +69,20 @@ class Calc:
         return lines
 
     def elapsedTime(self):
+        # Returns time elapsed over this tracking period thus far
         return self.times[-1] - self.times[0]
     
-    def updateStats(self): # given lines from game.txt, 
+    def updateStats(self):
+        # Given lines from game.txt, calculate damage stats
         lines = self.getLines()
         if len(lines) == 0:
             return
         for line in lines:
             damage = ""
-            lineArr = split(" for | damage!", line) # an array containing mostly junk, then damage, then junk
-            if len(lineArr) != 3: # if it wasn't split three ways, then we can toss out this line
+            # an array containing mostly junk, then damage, then junk
+            lineArr = split(" for | damage!", line)
+            # if it wasn't split three ways, then we can toss out this line
+            if len(lineArr) != 3:
                 continue
             try:
                 damage = lineArr[1]
@@ -90,8 +108,9 @@ class Calc:
     def out(self):
         return (self.damage, self.damagelist, self.elapsedTime())
 
-# helper methods
-def getTime(line): # get the time, in seconds, of the given line
+# Helper methods
+def getTime(line):
+    # Get the time, in seconds, of the given line from its timestamp
     if len(line) < 8:
         return -1
     hours = line[0] + line[1]
@@ -106,20 +125,8 @@ def getTime(line): # get the time, in seconds, of the given line
         return -1
 
 def getLastLine(f):
+    # Returns the index of the final line in the given file
     with open(f) as file:
         l = len(file.readlines()) - 1
     file.close()
     return l
-
-# if __name__ == "__main__":
-#     calc = Calc("Kaiman", 10)
-
-#     f1 = "testinput.txt"
-#     f2 = "testinput2.txt"
-
-#     calc.path = f1
-#     calc.updateStats()
-
-#     calc.path = f2
-#     calc.updateStats()
-#     print(calc.out())
