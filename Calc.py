@@ -52,8 +52,6 @@ class Calc:
         # Set new last line
         with open(self.path) as gamelog:
             self.lastLine = len(gamelog.readlines())-1
-        gamelog.close()
-        return
 
     def getLines(self):
         # Get all lines since self.lastLine
@@ -65,7 +63,6 @@ class Calc:
             else:
                 lines = allLines[self.lastLine:len(allLines) - 1]
             self.lastLine = len(allLines) - 1
-        gamelog.close()
         return lines
 
     def elapsedTime(self):
