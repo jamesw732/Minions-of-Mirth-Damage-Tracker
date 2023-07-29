@@ -1,4 +1,0 @@
-See README (Delete this line)
-[Character Name]
-[Global path to game.txt]
-[Inactivity timer; default is 10 seconds if line is blank]
