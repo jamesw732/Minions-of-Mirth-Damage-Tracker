@@ -1,14 +1,14 @@
 from re import split
 
 class Calc:
-    def __init__(self, pname, inactivity):
+    def __init__(self, pname, logpath, inactivity):
         self.pname = pname
         self.namelist = pname.split()
         self.inactivity = inactivity
         self.damage = 0
         self.damagelist = []
         self.times = [-1, -1]
-        self.path = ""
+        self.path = logpath
         self.lastLine = 0
     
     def setName(self, name):

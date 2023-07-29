@@ -5,112 +5,128 @@ from calc import *
 
 #pyinstaller -F -n DamageTracker --noconsole main.py
 
-def start(calc):
-    for entry in entries:
-        entry.delete(0, END)
-        entry.insert(0, 0)
-    global track
-    track = True
-    calc.reset()
-    calc.setLastLine()
-    calc.setName(namebox.get())
-    update(calc)
+class TrackerGUI:
+    def __init__(self, calc):
+        # Initialize some instance variables
+        self.calc = calc
+        self.track = False
+        # Make the GUI
+        # initialize overall frame:
+        self.root = Tk()
+        self.root.title("DPS Calc")
+        self.root.configure(bg="#282828")
+        # initialize output portion:
+        entrytext = ["Damage", "# Hits", "Min Hit", "Max Hit", "Avg Hit",
+                   "Time (s)", "DPS", "DPM"]
+        self.entries = [Label(self.root, width=12, bg=grey, fg=text_color,
+                            highlightbackground="grey", highlightthickness=1,
+                            anchor="e") for _ in entrytext]
+        [entry.grid(column=i, row=2) for i, entry in enumerate(self.entries)]
+        [Label(self.root, text=txt, bg=grey, fg=text_color).grid(column=i, row=1)
+            for i, txt in enumerate(entrytext)]
+        # initialize input portion:
+        # The name box (wow that's surprisingly a lot):
+        self.namebox = Entry(self.root, width=12, bg=grey, fg="cyan")
+        self.namebox.grid(column=0, row=0)
+        if calc.pname == "":
+            self.namebox.config(fg="grey")
+            self.namebox.insert(0, "Name")
+        self.namebox.insert(0, calc.pname)
+        self.namebox.bind("<ButtonPress>", self.handleNoNameFocus)
+        self.namebox.bind("<FocusOut>", self.handleNoNameDefocus)
+        self.namebox.bind("<Return>", self.handleNoNameReturn)
+        # Start/stop buttons
+        Button(self.root, text='Start', activebackground=hoverBG,
+               activeforeground=hoverText, bg=brown, command=self.start) \
+                  .grid(column=1, row=0)
+        Button(self.root, text='Stop', activebackground=hoverBG,
+               activeforeground=hoverText, bg=brown, command=self.interrupt) \
+                .grid(column=2, row=0)
+        # "Tracking DPS" Label
+        self.tracklabel = Label(self.root, text='', bg=grey, fg=text_color)
+        self.tracklabel.grid(column=3, row=0)
 
-def update(calc): # update the state of the calc and GUI based on new game log content
-    if not track:
-        return
+        self.root.mainloop()
 
-    global tracklabel
-    tracklabel.config(text="Tracking DPS")
+    def start(self):
+        """Begin tracking damage"""
+        for entry in self.entries:
+            entry.config(text="0")
+        self.track = True
+        self.calc.reset()
+        self.calc.setLastLine()
+        self.calc.setName(self.namebox.get())
+        self.update()
 
-    lastline = getLastLine(calc.path)
-    if lastline != calc.lastLine:
-        calc.updateStats()
-        if calc.damage > 0:
-            clearEntries()
-            displayStats(calc)
-    root.after(1000, lambda: update(calc))
+    def update(self):
+        """Update the state of the calc and GUI every second"""
+        if not self.track:
+            return
 
-def displayStats(calc): # displays current state of the calc to the GUI
-    entries[0].insert(0, calc.damage) # total damage
-    dmgList = calc.damagelist
-    entries[1].insert(0, len(dmgList)) # number of hits
-    entries[2].insert(0, min(dmgList)) # min hit
-    entries[3].insert(0, max(dmgList)) # max hit
-    entries[4].insert(0, round(int(entries[0].get())/int(entries[1].get())))  # avg hit
-    elapsedTime = calc.elapsedTime()
-    entries[5].insert(0, elapsedTime) # elapsed time
-    if elapsedTime > 0:
-        entries[6].insert(0, round(int(calc.damage) // (elapsedTime))) # DPS
-        entries[7].insert(0, int(entries[6].get()) * 60) # DPM
-    else:
-        entries[6].insert(0, "N/A")
-        entries[7].insert(0, "N/A")
+        self.tracklabel.config(text="Tracking DPS")
+        lastline = getLastLine(self.calc.path)
+        if lastline != self.calc.lastLine:
+            self.calc.updateStats()
+            if self.calc.damage > 0:
+                # Delete old contents and replace with new
+                for entry in self.entries:
+                    entry.config(text="")
+                self.displayStats()
+        self.root.after(1000, self.update)
 
+    def displayStats(self):
+        """Displays current state of the calc to the GUI"""
+        dmgList = self.calc.damagelist
+        elapsedTime = self.calc.elapsedTime()
+        self.entries[0].config(text=self.calc.damage) # total damage
+        self.entries[1].config(text=len(dmgList)) # number of hits
+        self.entries[2].config(text=min(dmgList)) # min hit
+        self.entries[3].config(text=max(dmgList)) # max hit
+        self.entries[4].config(text=
+            round(int(self.entries[0].cget("text"))
+                  /int(self.entries[1].cget("text"))))  # avg hit
+        self.entries[5].config(text=elapsedTime) # elapsed time
+        if elapsedTime > 0:
+            self.entries[6].config(text=round(int(self.calc.damage) // (elapsedTime))) # DPS
+            self.entries[7].config(text=int(self.entries[6].cget("text")) * 60) # DPM
+        else:
+            self.entries[6].config(text="N/A")
+            self.entries[7].config(text="N/A")
 
-def interrupt(): # stop tracking damage
-    global track
-    global tracklabel
-    track = False
-    tracklabel.config(text="")
+    def interrupt(self):
+        """Stop update() from recursing, called when 'stop' clicked"""
+        self.track = False
+        self.tracklabel.config(text="")
 
-def clearEntries(): # clear the stat entries, used when you first click "start"
-    for entry in entries:
-        entry.delete(0, END)
+    def handleNoNameFocus(self, _):
+        self.namebox.config(fg="cyan", )
+        if self.namebox.get() in ["", "Name"]:
+            self.namebox.delete(0, END)
 
-def createInputFrame(container, calc):
-    frame = ttk.Frame(container)
-    Label(container, text='Name:', bg=grey, fg=text).grid(column=0, row=0)
-    global namebox
-    namebox = Entry(container, width=12, bg=grey, fg="cyan")
-    namebox.insert(0, calc.pname)
-    namebox.focus()
-    namebox.grid(column=1, row=0)
-    Button(container, text='Start', activebackground=hoverBG, activeforeground=hoverText, bg=brown, command= lambda: start(calc)).grid(column=2, row=0)
-    Button(container, text='Stop', activebackground=hoverBG, activeforeground=hoverText, bg=brown, command=interrupt).grid(column=3, row=0)
-    return frame
+    def handleNoNameDefocus(self, _):
+        self.calc.pname = self.namebox.get()
+        if self.calc.pname == "":
+            self.namebox.config(fg="grey")
+            self.namebox.insert(0, "Name")
 
-def createOutputFrame(container):
-    frame = ttk.Frame(container)
-    cols = ["Damage", "# Hits", "Min Hit", "Max Hit", "Avg Hit", "Time (s)", "DPS", "DPM"]
-    for i in range(8):
-        Label(container, text=cols[i], bg=grey, fg=text).grid(column=i,row=1)
-    for j in range(8):
-        entries[j].grid(column=j,row=2)
-    
-    return frame
+    def handleNoNameReturn(self, _):
+        self.calc.pname = self.namebox.get()
+        if self.calc.pname == "":
+            self.namebox.config(fg="grey")
+            self.namebox.insert(0, "Name")
 
-def createMainWindow(calc):
-    createOutputFrame(root)
-    createInputFrame(root, calc)
-    root.mainloop()
-    return
 
 if __name__ == "__main__":
-    root = Tk()
-    root.title("DPS Calc")
-    root.configure(bg="#282828")
-
-    track = False
-    entries = [Entry(root, width=12, bg=grey, fg=text) for _ in range(8)]
-    namebox = None
-
-    tracklabel = Label(root, text='', bg=grey, fg=text)
-    tracklabel.grid(column=4, row=0)
-
-    settings = open("settings.txt", "r")
-    data = []
-    for line in settings:
-        data.append(line)
-    name = data[0].strip() # exclude newline character
-    gamelog = data[1].strip() # game.txt path, contains all messages sent to game window
     try:
-        inactivity = int(data[2])
-    except ValueError:
+        with open("settings.txt", "r") as settings:
+            settingdata = []
+            for line in settings:
+                settingdata.append(line)
+            name = settingdata[0].strip() # exclude newline character
+            gamelog = settingdata[1].strip() # game.txt path, contains all messages sent to game window
+            inactivity = int(settingdata[2])
+    except (FileNotFoundError, ValueError, IndexError):
+        name = gamelog = ""
         inactivity = 10
-    except IndexError:
-        inactivity = 10
-    calc = Calc(name, inactivity)
-    calc.path = gamelog
-
-    createMainWindow(calc)
+    calc = Calc(name, gamelog, inactivity)
+    TrackerGUI(calc)
