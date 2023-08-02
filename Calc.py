@@ -1,24 +1,16 @@
 from re import split
 
 class Calc:
-    def __init__(self, pname, logpath, inactivity):
+    def __init__(self):
         """
-        self.pname: Player name, str
-        self.namelist: Handling for multi-word names, list[str]
-        self.inactivity: Inactivity timer, int
         self.damage: total damage dealt while tracking, int
         self.damagelist: list of all damage dealt, list[int]
         self.times: first and last times that we're tracking, list[int]
-        self.path: path to game.txt, str
         self.lastLine: index of current last line in game.txt
         """
-        self.pname = pname
-        self.namelist = pname.split()
-        self.inactivity = inactivity
         self.damage = 0
         self.damagelist = []
         self.times = [-1, -1]
-        self.path = logpath
         self.lastLine = 0
     
     def setName(self, name):
