@@ -14,8 +14,6 @@ class TrackerGUI(tk.Tk):
     def __init__(self):
         super().__init__()
         """Initialize the whole GUI, including making all the widgets."""
-        # Initialize some instance variables
-        self.calc = Calc()
         self.track = False
         try:
             with open('settings.json') as settings:
@@ -46,7 +44,6 @@ class TrackerGUI(tk.Tk):
         #self.namebox.bind("<ButtonPress>", self.handleNoNameFocus)
         self.namebox.bind("<FocusIn>", self.handleNoNameFocus)
         self.namebox.bind("<FocusOut>", self.handleNoNameUnfocus)
-        self.namebox.bind("<Return>", self.handleNoNameReturn)
         # Game log entry:
         self.logentry = tk.Entry(self, width=14, bg=grey, fg=text_color,
                               justify="left")
@@ -55,7 +52,6 @@ class TrackerGUI(tk.Tk):
         #self.logentry.bind("<ButtonPress>", self.handleNoLogFocus)
         self.logentry.bind("<FocusIn>", self.handleNoLogFocus)
         self.logentry.bind("<FocusOut>", self.handleNoLogUnfocus)
-        self.logentry.bind("<Return>", self.handleNoLogReturn)
         # Inactivity timer entry:
         self.inactivity = tk.Entry(self, width=4, bg=grey, fg="cyan")
         self.inactivity.grid(column=2, row=0, sticky="e")
@@ -106,16 +102,12 @@ class TrackerGUI(tk.Tk):
 
     def start(self):
         """Begin tracking damage"""
-        # Make sure calc has right inputs
-        self.calc.name = self.namebox.get()
-        self.calc.logpath = self.logentry.get()
-        self.calc.inactivity = int(self.inactivity.get())
+        # Initialize a new calc
+        self.calc = Calc(self.namebox.get(), self.logentry.get(), int(self.inactivity.get()))
         for entry in self.entries:
             entry['text'] = 0
         self.namelabel['text'] = self.calc.name
         self.track = True
-        # Reset the calc:
-        self.calc.reset()
         self.calc.lastLine = self.calc.getLastLine()
         # Disable entries during data collection
         self.namebox['state'] = 'disabled'
@@ -206,16 +198,13 @@ class TrackerGUI(tk.Tk):
         self.namebox.delete(0, tk.END)
         self.namebox['fg'] = 'cyan'
         self.namebox.insert(0, settings[0])
-        self.calc.name = settings[0]
         # game.txt path:
         self.logentry.delete(0, tk.END)
         self.logentry['fg'] = 'cyan'
         self.logentry.insert(0, settings[1])
-        self.calc.logpath = settings[1]
         # inactivity threshold:
         self.inactivity.delete(0, tk.END)
         self.inactivity.insert(0, settings[2])
-        self.calc.inactivity = settings[2]
 
     def deletePreset(self):
         """Delete current preset from settings.json."""
@@ -252,13 +241,9 @@ class TrackerGUI(tk.Tk):
             self.namebox.delete(0, tk.END)
 
     def handleNoNameUnfocus(self, *args):
-        self.calc.name = self.namebox.get()
-        if self.calc.name == "":
+        if self.namebox.get() == "":
             self.namebox['fg'] = text_color
             self.namebox.insert(0, "Name")
-
-    def handleNoNameReturn(self, *args):
-        self.calc.name = self.namebox.get()
 
     def handleNoLogFocus(self, *args):
         self.logentry['fg'] = "cyan"
@@ -266,10 +251,6 @@ class TrackerGUI(tk.Tk):
             self.logentry.delete(0, tk.END)
 
     def handleNoLogUnfocus(self, *args):
-        self.calc.logpath = self.logentry.get()
-        if self.calc.logpath == "":
+        if self.logentry.get() == "":
             self.logentry['fg'] = text_color
             self.logentry.insert(0, "game.txt path")
-
-    def handleNoLogReturn(self, *args):
-        self.calc.logpath = self.logentry.get()

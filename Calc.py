@@ -5,19 +5,19 @@ class Calc:
     
     The "under the hood" portion of this program, reads from game.txt and 
     outputs data whenever called."""
-    def __init__(self):
+    def __init__(self, name, logpath, inactivity=10):
         """
-        self.name: name of the player being tracked, str
+        self.name: names of the mobs being tracked, list[str]
         self.logpath: global path to game.txt, str
         self.inactivity: inactivity timer threshold, resets if time between two valid damage lines is higher than this.
-        self.damage: total damage dealt while tracking, int
+        self.damage: total damage dealt while tracking, dict[str: int]
         self.damagelist: list of all damage dealt, list[int]
         self.times: first and last times of our data tracking, list[int]
         self.lastLine: index of current last line in game.txt
         """
-        self.name = ''
-        self.logpath = ''
-        self.inactivity = 10
+        self.name = name
+        self.logpath = logpath
+        self.inactivity = inactivity
         self.damage = 0
         self.damagelist = []
         self.times = [-1, -1]
@@ -67,14 +67,14 @@ class Calc:
     
     def updateStats(self):
         # Given lines from game.txt, calculate damage stats
-        lines = self.getLines()
-        if len(lines) == 0:
+        logdata = self.getLines()
+        if len(logdata) == 0:
             return
-        for line in lines:
+        for line in logdata:
             damage = ""
             lineArr = split(" for | damage!", line)
             # line should be split [junk, dmg, nothing]
-            if len(lineArr) != 3:
+            if len(lineArr) != 3 or "is damaged" in line:
                 continue
             try:
                 damage = int(lineArr[1])
@@ -106,3 +106,16 @@ def getTime(line):
         return int(hours) * 3600 + int(mins) * 60 + int(secs)
     except ValueError:
         return -1
+
+if __name__ == "__main__":
+    # calc = Calc()
+    # calc.name = "Ghoulish Lookout"
+    # calc.logpath = "exampledamage.txt"
+    # calc.updateStats()
+    # print(calc.damage)
+
+    calc = Calc()
+    calc.names = ["Kaiman", "Ghoulish Lookout"]
+    calc.logpath = "exampledamage.txt"
+    calc.updateStats()
+    print(calc.damage)
