@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import ttk
 from colors import *
 from Calc import *
 import json
@@ -14,7 +13,12 @@ class TrackerGUI(tk.Tk):
     def __init__(self):
         super().__init__()
         """Initialize the whole GUI, including making all the widgets."""
+        # Need to initialize some blank variables to reference later
+        self.calc = Calc([], '')
         self.track = False
+        self.datalabels = {}
+        self.namelabels = {}
+        self.names = []
         try:
             with open('settings.json') as settings:
                 self.settings = json.load(settings)
@@ -24,18 +28,11 @@ class TrackerGUI(tk.Tk):
         # initialize overall frame:
         self.title("MoM Damage Calc")
         self['bg'] = grey
-        # initialize output portion, which is just the data cells and their labels:
-        statlabels = ["Name", "Damage", "# Hits", "Min Hit", "Max Hit", "Avg Hit",
+        # Initialize output labels, but not the cells:
+        self.statlabels = ["Name", "Damage", "# Hits", "Min Hit", "Max Hit", "Avg Hit",
                    "Time (s)", "DPS", "DPM"]
-        self.entries = [tk.Label(self, width=12, bg=grey, fg=text_color,
-                            highlightbackground="grey", highlightthickness=1,
-                            anchor="e") for _ in statlabels[1:]]
-        [entry.grid(column=i+1, row=2) for i, entry in enumerate(self.entries)]
-        self.namelabel = tk.Label(self, width=12, bg=grey, fg=text_color)
-        self.namelabel.grid(column=0, row=2)
-        # Create labels anonymously
-        [tk.Label(self, text=txt, bg=grey, fg=text_color).grid(column=i, row=1)
-            for i, txt in enumerate(statlabels)]
+        [tk.Label(self, text=txt, bg=grey, fg=text_color, width=12).grid(column=i, row=1)
+            for i, txt in enumerate(self.statlabels)]
         # initialize input portion:
         # The name entry:
         self.namebox = tk.Entry(self, width=14, bg=grey, fg=text_color)
@@ -66,7 +63,7 @@ class TrackerGUI(tk.Tk):
         self.save.grid(column=3, row=0)
         # Settings Presets:
         if self.settings:
-            self.currentPreset = tk.StringVar(self, list(self.settings.keys())[0])
+            self.currentPreset = tk.StringVar(self, list(self.settings)[0])
         else:
             self.currentPreset = tk.StringVar(self, "Presets")
         self.presets = tk.OptionMenu(self,
@@ -75,7 +72,7 @@ class TrackerGUI(tk.Tk):
                         command=self.loadPreset)
         self.presets.config(bg=button_brown, activebackground=button_brown,
                         fg=text_color, activeforeground = text_color,
-                        highlightthickness=0)
+                        highlightthickness=0, width=6)
         self.presets.grid(column=4, row=0, sticky=tk.W, padx=5, pady=5)
         if len(self.settings) > 0:
             self.loadPreset()
@@ -87,10 +84,10 @@ class TrackerGUI(tk.Tk):
         # Start/stop buttons:
         tk.Button(self, text='Start', activebackground=hoverBG,
                activeforeground=hoverText, bg=button_brown, command=self.start,
-               fg=text_color).grid(column=6, row=0, sticky=tk.W)
+               fg=text_color, width=5).grid(column=6, row=0, sticky=tk.W)
         tk.Button(self, text='Stop', activebackground=hoverBG,
                activeforeground=hoverText, bg=button_brown, command=self.interrupt,
-               fg=text_color).grid(column=6, row=0, sticky=tk.E)
+               fg=text_color, width=4).grid(column=6, row=0, sticky=tk.E)
         # "Tracking DPS" label:
         self.tracklabel = tk.Label(self, text='Not Tracking',
                                 bg=grey, fg="red")
@@ -102,20 +99,39 @@ class TrackerGUI(tk.Tk):
 
     def start(self):
         """Begin tracking damage"""
-        # Initialize a new calc
-        self.calc = Calc(self.namebox.get(), self.logentry.get(), int(self.inactivity.get()))
-        for entry in self.entries:
-            entry['text'] = 0
-        self.namelabel['text'] = self.calc.name
+        # Destroy previous cells:
+        for name in self.calc.names:
+            self.namelabels[name].destroy()
+            for lab in self.datalabels[name]:
+                lab.destroy()
+        # Initialize a new calc:
+        self.names = self.namebox.get().split(', ')
+        self.calc = Calc(self.names, self.logentry.get(), int(self.inactivity.get()))
+        # Initialize/format output cells:
+        self.datalabels = {name: [tk.Label(self, width=12, bg=grey, fg=text_color,
+                                highlightbackground='grey', highlightthickness=1,
+                                anchor=tk.E)
+                                for _ in self.statlabels[1:]]
+                                for name in self.names}
+
+        [[label.grid(column=i+1, row=2+j) for i, label in enumerate(self.datalabels[name])] for j, name in enumerate(self.names)]
+        # Initialize/format name labels:
+        self.namelabels = {name: tk.Label(self, width=12, bg=grey, fg=text_color, anchor=tk.W) for name in self.names}
+        [self.namelabels[name].grid(column=0, row=2+i) for i, name in enumerate(self.namelabels)]
+
+        # Insert text into labels:
+        for name in self.names:
+            self.namelabels[name]['text'] = name
+            for lab in self.datalabels[name]:
+                lab['text'] = 0
+
         self.track = True
         self.calc.lastLine = self.calc.getLastLine()
         # Disable entries during data collection
-        self.namebox['state'] = 'disabled'
-        self.logentry['state'] = 'disabled'
-        self.inactivity['state'] = 'disabled'
-        self.save['state'] = 'disabled'
-        self.delete['state'] = 'disabled'
-        self.presets['state'] = 'disabled'
+        entries = [self.namebox, self.logentry, self.inactivity, self.save, self.delete, self.presets]
+        for e in entries:
+            e['state'] = 'disabled'
+ 
         self.tracklabel.config(text="Tracking DPS", fg="green2")
         self.update()
 
@@ -128,45 +144,36 @@ class TrackerGUI(tk.Tk):
         lastline = self.calc.getLastLine()
         if lastline != self.calc.lastLine:
             self.calc.updateStats()
-            if self.calc.damage > 0:
-                self.displayStats()
+            for name in self.names:
+                if self.calc.damagedict[name] > 0:
+                    self.displayStats(name)
         self.after(1000, self.update)
 
-    def displayStats(self):
+    def displayStats(self, name):
         """Displays current state of the calc to the GUI"""
-        dmgList = self.calc.damagelist
+        dmglist = self.calc.damagelists[name]
         elapsedTime = self.calc.elapsedTime()
-        # total damage
-        self.entries[0]['text'] = self.calc.damage
-        # number of hits
-        self.entries[1]['text'] = len(dmgList)
-        # min hit
-        self.entries[2]['text'] = min(dmgList)
-        # max hit
-        self.entries[3]['text'] = max(dmgList)
-        # avg hit
-        self.entries[4]['text'] = round(self.calc.damage/len(dmgList))
-        # elapsed time
-        self.entries[5]['text'] = elapsedTime
-        if elapsedTime > 0:
-            # DPS
-            self.entries[6]['text'] = round(int(self.calc.damage) // (elapsedTime))
-            # DPM
-            self.entries[7]['text'] = int(self.entries[6].cget("text")) * 60
-        else:
-            self.entries[6]['text'] = "N/A"
-            self.entries[7]['text'] = "N/A"
+        data = [self.calc.damagedict[name],
+                len(dmglist),
+                min(dmglist),
+                max(dmglist),
+                self.calc.damagedict[name]//len(dmglist),
+                elapsedTime,
+                int(self.calc.damagedict[name]) // (elapsedTime)
+                    if elapsedTime > 0 else 'N/A',
+                int(self.calc.damagedict[name]) // (elapsedTime) * 60
+                    if elapsedTime > 0 else 'N/A']
+
+        for d, lab in zip(data, self.datalabels[name]):
+            lab['text'] = d
 
     def interrupt(self):
         """Stop update() from recursing, called when 'stop' clicked"""
         self.track = False
         self.tracklabel.config(text="Not Tracking", fg="red")
-        self.namebox['state'] = 'normal'
-        self.logentry['state'] = 'normal'
-        self.inactivity['state'] = 'normal'
-        self.save['state'] = 'normal'
-        self.delete['state'] = 'normal'
-        self.presets['state'] = 'normal'
+        entries = [self.namebox, self.logentry, self.inactivity, self.save, self.delete, self.presets]
+        for e in entries:
+            e['state'] = 'normal'
 
     def savePreset(self):
         """Save current setup as a preset in settings.json"""
@@ -185,7 +192,7 @@ class TrackerGUI(tk.Tk):
         # Add the new preset to the option menu
         self.currentPreset.set(key)
         self.presets['menu'].delete(0, tk.END)
-        for choice in list(self.settings.keys()):
+        for choice in list(self.settings):
             self.presets['menu'].add_command(label=choice,
                                 command=tk._setit(self.currentPreset, choice, self.loadPreset))
 
@@ -216,9 +223,9 @@ class TrackerGUI(tk.Tk):
                 json.dump(self.settings, settings, indent=4)
             # Update the option menu
             if len(self.settings) > 0:
-                self.currentPreset.set(list(self.settings.keys())[0])
+                self.currentPreset.set(list(self.settings)[0])
                 self.presets['menu'].delete(0, tk.END)
-                for choice in list(self.settings.keys()):
+                for choice in list(self.settings):
                     self.presets['menu'].add_command(label=choice,
                         command=tk._setit(self.currentPreset, choice, self.loadPreset))
                 self.loadPreset()
@@ -230,10 +237,11 @@ class TrackerGUI(tk.Tk):
 
     def saveData(self):
         with open("damagedata.txt", "a") as dmgdata:
-            dmgdata.write(f"{self.namelabel.cget('text')} ")
-            for entry in self.entries:
-                dmgdata.write(f"{str(entry.cget('text'))} ")
-            dmgdata.write("\n")
+            for name in self.names:
+                dmgdata.write(f"{self.namelabels[name].cget('text')} ")
+                for lab in self.datalabels[name]:
+                    dmgdata.write(f"{str(lab.cget('text'))} ")
+                dmgdata.write("\n")
 
     def handleNoNameFocus(self, *args):
         self.namebox['fg'] = 'cyan'

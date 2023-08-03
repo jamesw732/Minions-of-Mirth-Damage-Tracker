@@ -5,7 +5,7 @@ class Calc:
     
     The "under the hood" portion of this program, reads from game.txt and 
     outputs data whenever called."""
-    def __init__(self, name, logpath, inactivity=10):
+    def __init__(self, names, logpath, inactivity=10):
         """
         self.name: names of the mobs being tracked, list[str]
         self.logpath: global path to game.txt, str
@@ -15,18 +15,18 @@ class Calc:
         self.times: first and last times of our data tracking, list[int]
         self.lastLine: index of current last line in game.txt
         """
-        self.name = name
+        self.names = names
         self.logpath = logpath
         self.inactivity = inactivity
-        self.damage = 0
-        self.damagelist = []
+        self.damagedict = {name: 0 for name in self.names}
+        self.damagelists = {name: [] for name in self.names}
         self.times = [-1, -1]
         self.lastLine = 0
 
     def reset(self):
         # Resets damage and time data
-        self.damage = 0
-        self.damagelist.clear()
+        self.damagedict = {name: 0 for name in self.names}
+        self.damagelists = {name: [] for name in self.names}
         self.times = [-1, -1]
     
     def updateTime(self, time):
@@ -79,11 +79,12 @@ class Calc:
             try:
                 damage = int(lineArr[1])
                 # 'timestamp - name', so name is always index 2
-                if line.split(' - ')[1].startswith(self.name):
-                    curTime = getTime(line)
-                    self.updateTime(curTime)
-                    self.damage += damage
-                    self.damagelist.append(damage)
+                for name in self.names:
+                    if line.split(' - ')[1].startswith(name):
+                        curTime = getTime(line)
+                        self.updateTime(curTime)
+                        self.damagedict[name] += damage
+                        self.damagelists[name].append(damage)
             except ValueError:
                 continue
         return
@@ -106,16 +107,3 @@ def getTime(line):
         return int(hours) * 3600 + int(mins) * 60 + int(secs)
     except ValueError:
         return -1
-
-if __name__ == "__main__":
-    # calc = Calc()
-    # calc.name = "Ghoulish Lookout"
-    # calc.logpath = "exampledamage.txt"
-    # calc.updateStats()
-    # print(calc.damage)
-
-    calc = Calc()
-    calc.names = ["Kaiman", "Ghoulish Lookout"]
-    calc.logpath = "exampledamage.txt"
-    calc.updateStats()
-    print(calc.damage)
