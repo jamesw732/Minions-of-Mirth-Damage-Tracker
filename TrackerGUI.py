@@ -88,7 +88,7 @@ class TrackerGUI(tk.Tk):
         tk.Button(self, text='Stop', activebackground=hoverBG,
                activeforeground=hoverText, bg=button_brown, command=self.interrupt,
                fg=text_color, width=4).grid(column=6, row=0, sticky=tk.E)
-        # "Tracking DPS" label:
+        # "Tracking Damage" label:
         self.tracklabel = tk.Label(self, text='Not Tracking',
                                 bg=grey, fg="red")
         self.tracklabel.grid(column=7, row=0)
@@ -127,12 +127,8 @@ class TrackerGUI(tk.Tk):
 
         self.track = True
         self.calc.lastLine = self.calc.getLastLine()
-        # Disable entries during data collection
-        entries = [self.namebox, self.logentry, self.inactivity, self.save, self.delete, self.presets]
-        for e in entries:
-            e['state'] = 'disabled'
  
-        self.tracklabel.config(text="Tracking DPS", fg="green2")
+        self.tracklabel.config(text="Tracking Dmg", fg="green2")
         self.update()
 
     def update(self):
@@ -171,9 +167,6 @@ class TrackerGUI(tk.Tk):
         """Stop update() from recursing, called when 'stop' clicked"""
         self.track = False
         self.tracklabel.config(text="Not Tracking", fg="red")
-        entries = [self.namebox, self.logentry, self.inactivity, self.save, self.delete, self.presets]
-        for e in entries:
-            e['state'] = 'normal'
 
     def savePreset(self):
         """Save current setup as a preset in settings.json"""

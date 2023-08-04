@@ -1,4 +1,5 @@
 from re import split
+import os
 
 class Calc:
     """Damage Calculator
@@ -21,7 +22,11 @@ class Calc:
         self.damagedict = {name: 0 for name in self.names}
         self.damagelists = {name: [] for name in self.names}
         self.times = [-1, -1]
-        self.lastLine = 0
+        if os.path.exists(self.logpath):
+            with open(self.logpath) as log:
+                self.lastLine = max(0, len(log.readlines()) - 1)
+        else:
+            self.lastLine = 0
 
     def reset(self):
         # Resets damage and time data
@@ -54,10 +59,16 @@ class Calc:
         lines = []
         with open(self.logpath) as gamelog:
             allLines = gamelog.readlines()
-            if self.lastLine > len(allLines): # hail mary for when game.txt gets replaced by a blank game.txt
-                lines = allLines
+            # game.txt overflowed, use game.txt.1 to recover lost data
+            if self.lastLine > len(allLines):
+                game1path =  self.logpath.replace('game.txt', 'game.txt.1')
+                with open(game1path) as gamelog2:
+                    log2lines = gamelog2.readlines()
+                    lines = log2lines[self.lastLine:]
+                lines += allLines
+            # typical case where we just take everything since lastline
             else:
-                lines = allLines[self.lastLine:len(allLines) - 1]
+                lines = allLines[self.lastLine:]
             self.lastLine = len(allLines) - 1
         return lines
 
@@ -81,16 +92,12 @@ class Calc:
                 # 'timestamp - name', so name is always index 2
                 for name in self.names:
                     if line.split(' - ')[1].startswith(name):
-                        curTime = getTime(line)
-                        self.updateTime(curTime)
+                        self.updateTime(getTime(line)) # handle inactivity if applicable
                         self.damagedict[name] += damage
                         self.damagelists[name].append(damage)
             except ValueError:
                 continue
         return
-
-    def out(self):
-        return (self.damage, self.damagelist, self.elapsedTime())
 
 # Helper methods
 def getTime(line):
