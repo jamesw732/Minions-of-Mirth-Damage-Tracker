@@ -35,7 +35,7 @@ class TrackerGUI(tk.Tk):
             for i, txt in enumerate(self.statlabels)]
         # initialize input portion:
         # The name entry:
-        self.namebox = tk.Entry(self, width=14, bg=grey, fg=text_color)
+        self.namebox = tk.Entry(self, width=14, bg=grey, fg=text_color, insertbackground='cyan')
         self.namebox.grid(column=0, row=0)
         self.namebox.insert(0, "Name")
         #self.namebox.bind("<ButtonPress>", self.handleNoNameFocus)
@@ -43,14 +43,14 @@ class TrackerGUI(tk.Tk):
         self.namebox.bind("<FocusOut>", self.handleNoNameUnfocus)
         # Game log entry:
         self.logentry = tk.Entry(self, width=14, bg=grey, fg=text_color,
-                              justify="left")
+                              justify="left", insertbackground='cyan')
         self.logentry.grid(column=1, row=0)
         self.logentry.insert(0, "game.txt path")
         #self.logentry.bind("<ButtonPress>", self.handleNoLogFocus)
         self.logentry.bind("<FocusIn>", self.handleNoLogFocus)
         self.logentry.bind("<FocusOut>", self.handleNoLogUnfocus)
         # Inactivity timer entry:
-        self.inactivity = tk.Entry(self, width=4, bg=grey, fg="cyan")
+        self.inactivity = tk.Entry(self, width=4, bg=grey, fg="cyan", insertbackground='cyan')
         self.inactivity.grid(column=2, row=0, sticky="e")
         self.inactivity.insert(0, 10)
         self.inactivityLabel = tk.Label(self, width=8, bg=grey,
@@ -72,7 +72,7 @@ class TrackerGUI(tk.Tk):
                         command=self.loadPreset)
         self.presets.config(bg=button_brown, activebackground=button_brown,
                         fg=text_color, activeforeground = text_color,
-                        highlightthickness=0, width=6)
+                        highlightthickness=0, width=6, anchor=tk.W)
         self.presets.grid(column=4, row=0, sticky=tk.W, padx=5, pady=5)
         if len(self.settings) > 0:
             self.loadPreset()
@@ -148,7 +148,7 @@ class TrackerGUI(tk.Tk):
     def displayStats(self, name):
         """Displays current state of the calc to the GUI"""
         dmglist = self.calc.damagelists[name]
-        elapsedTime = self.calc.elapsedTime()
+        elapsedTime = self.calc.elapsedTime(name)
         data = [self.calc.damagedict[name],
                 len(dmglist),
                 min(dmglist),
@@ -221,7 +221,6 @@ class TrackerGUI(tk.Tk):
                 for choice in list(self.settings):
                     self.presets['menu'].add_command(label=choice,
                         command=tk._setit(self.currentPreset, choice, self.loadPreset))
-                self.loadPreset()
             else:
                 self.currentPreset.set("Presets")
                 self.presets['menu'].delete(0, tk.END)

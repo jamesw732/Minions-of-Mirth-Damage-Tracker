@@ -13,7 +13,7 @@ class Calc:
         self.inactivity: inactivity timer threshold, resets if time between two valid damage lines is higher than this.
         self.damage: total damage dealt while tracking, dict[str: int]
         self.damagelist: list of all damage dealt, list[int]
-        self.times: first and last times of our data tracking, list[int]
+        self.times: first and last times of data tracking for each player, dict[str: list[int]]
         self.lastLine: index of current last line in game.txt
         """
         self.names = names
@@ -21,7 +21,7 @@ class Calc:
         self.inactivity = inactivity
         self.damagedict = {name: 0 for name in self.names}
         self.damagelists = {name: [] for name in self.names}
-        self.times = [-1, -1]
+        self.times = {name: [-1, -1] for name in self.names}
         if os.path.exists(self.logpath):
             with open(self.logpath) as log:
                 self.lastLine = max(0, len(log.readlines()) - 1)
@@ -32,22 +32,22 @@ class Calc:
         # Resets damage and time data
         self.damagedict = {name: 0 for name in self.names}
         self.damagelists = {name: [] for name in self.names}
-        self.times = [-1, -1]
+        self.times = {name: [-1, -1] for name in self.names}
     
-    def updateTime(self, time):
+    def updateTime(self, time, name):
         """Updates list, meant to be called for every valid damage line"""
         # Initial no data case, times haven't been set yet
-        if self.times[0] == -1:
-            self.times[0] = time
-            self.times[1] = time
+        if self.times[name][0] == -1:
+            self.times[name][0] = time
+            self.times[name][1] = time
         # We went over inactivity threshold, so we reset and then start again on this time
-        elif time - self.times[1] > self.inactivity:
+        elif time - self.times[name][1] > self.inactivity:
             self.reset()
-            self.times[0] = time
-            self.times[1] = time
+            self.times[name][0] = time
+            self.times[name][1] = time
         # Typical case where we just update the most recent time
         else:
-            self.times[1] = time
+            self.times[name][1] = time
 
     def getLastLine(self):
         # Returns the latest line in game.txt. Does not store it.
@@ -72,9 +72,9 @@ class Calc:
             self.lastLine = len(allLines) - 1
         return lines
 
-    def elapsedTime(self):
+    def elapsedTime(self, name):
         # Returns time elapsed over this tracking period thus far
-        return self.times[1] - self.times[0]
+        return self.times[name][1] - self.times[name][0]
     
     def updateStats(self):
         # Given lines from game.txt, calculate damage stats
@@ -92,7 +92,7 @@ class Calc:
                 # 'timestamp - name', so name is always index 2
                 for name in self.names:
                     if line.split(' - ')[1].startswith(name):
-                        self.updateTime(getTime(line)) # handle inactivity if applicable
+                        self.updateTime(getTime(line), name) # handle inactivity if applicable
                         self.damagedict[name] += damage
                         self.damagelists[name].append(damage)
             except ValueError:
