@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import filedialog
 from colors import *
 from Calc import *
 import json
@@ -19,6 +20,7 @@ class TrackerGUI(tk.Tk):
         self.datalabels = {}
         self.namelabels = {}
         self.names = []
+        self.log = ""
         try:
             with open('settings.json') as settings:
                 self.settings = json.load(settings)
@@ -41,14 +43,11 @@ class TrackerGUI(tk.Tk):
         #self.namebox.bind("<ButtonPress>", self.handleNoNameFocus)
         self.namebox.bind("<FocusIn>", self.handleNoNameFocus)
         self.namebox.bind("<FocusOut>", self.handleNoNameUnfocus)
-        # Game log entry:
-        self.logentry = tk.Entry(self, width=14, bg=grey, fg=text_color,
-                              justify="left", insertbackground='cyan')
-        self.logentry.grid(column=1, row=0)
-        self.logentry.insert(0, "game.txt path")
-        #self.logentry.bind("<ButtonPress>", self.handleNoLogFocus)
-        self.logentry.bind("<FocusIn>", self.handleNoLogFocus)
-        self.logentry.bind("<FocusOut>", self.handleNoLogUnfocus)
+        # Log file button:
+        self.logbutton = tk.Button(self, text="Set Log Path", activebackground=hoverBG,
+                activeforeground=hoverText, bg=button_brown, command=self.getLog,
+                fg=text_color)
+        self.logbutton.grid(row=0, column=1)
         # Inactivity timer entry:
         self.inactivity = tk.Entry(self, width=4, bg=grey, fg="cyan", insertbackground='cyan')
         self.inactivity.grid(column=2, row=0, sticky="e")
@@ -97,6 +96,9 @@ class TrackerGUI(tk.Tk):
                activeforeground=hoverText, bg=button_brown, command=self.saveData,
                fg=text_color).grid(column=8, row=0)
 
+    def getLog(self):
+        self.log = filedialog.askopenfilename(filetypes=[('text files', '*.txt')])
+
     def start(self):
         """Begin tracking damage"""
         # Destroy previous cells:
@@ -106,7 +108,7 @@ class TrackerGUI(tk.Tk):
                 lab.destroy()
         # Initialize a new calc:
         self.names = self.namebox.get().split(', ')
-        self.calc = Calc(self.names, self.logentry.get(), int(self.inactivity.get()))
+        self.calc = Calc(self.names, self.log, int(self.inactivity.get()))
         # Initialize/format output cells:
         self.datalabels = {name: [tk.Label(self, width=12, bg=grey, fg=text_color,
                                 highlightbackground='grey', highlightthickness=1,
@@ -176,7 +178,7 @@ class TrackerGUI(tk.Tk):
                 raise KeyError
             # Otherwise, add the new preset to the json
             key = str(self.namebox.get())
-            self.settings[key] = [key, self.logentry.get(), str(self.inactivity.get())]
+            self.settings[key] = [key, self.log, str(self.inactivity.get())]
             with open('settings.json', 'w') as settings:
                 json.dump(self.settings, settings, indent=4)
         except KeyError:
@@ -199,9 +201,7 @@ class TrackerGUI(tk.Tk):
         self.namebox['fg'] = 'cyan'
         self.namebox.insert(0, settings[0])
         # game.txt path:
-        self.logentry.delete(0, tk.END)
-        self.logentry['fg'] = 'cyan'
-        self.logentry.insert(0, settings[1])
+        self.log = settings[1]
         # inactivity threshold:
         self.inactivity.delete(0, tk.END)
         self.inactivity.insert(0, settings[2])
@@ -244,13 +244,3 @@ class TrackerGUI(tk.Tk):
         if self.namebox.get() == "":
             self.namebox['fg'] = text_color
             self.namebox.insert(0, "Name")
-
-    def handleNoLogFocus(self, *args):
-        self.logentry['fg'] = "cyan"
-        if self.logentry.get() in ["", "game.txt path"]:
-            self.logentry.delete(0, tk.END)
-
-    def handleNoLogUnfocus(self, *args):
-        if self.logentry.get() == "":
-            self.logentry['fg'] = text_color
-            self.logentry.insert(0, "game.txt path")
