@@ -36,6 +36,10 @@ class Calc:
     
     def updateTime(self, time, name):
         """Updates list, meant to be called for every valid damage line"""
+        # If day rollover, add 24 hours
+        print(time)
+        if time < self.times[name][0]:
+            time += 86400
         # Initial no data case, times haven't been set yet
         if self.times[name][0] == -1:
             self.times[name][0] = time
