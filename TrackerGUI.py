@@ -101,6 +101,8 @@ class TrackerGUI(tk.Tk):
 
     def start(self):
         """Begin tracking damage"""
+        if self.log == '':
+            return
         # Destroy previous cells:
         for name in self.calc.names:
             self.namelabels[name].destroy()
@@ -182,7 +184,6 @@ class TrackerGUI(tk.Tk):
             with open('settings.json', 'w') as settings:
                 json.dump(self.settings, settings, indent=4)
         except KeyError:
-            print("That is not a valid preset name")
             return
         # Add the new preset to the option menu
         self.currentPreset.set(key)
@@ -209,23 +210,20 @@ class TrackerGUI(tk.Tk):
     def deletePreset(self):
         """Delete current preset from settings.json."""
         key = self.currentPreset.get()
-        if key in self.settings:
-            # Update settings.json
-            self.settings.pop(key)
-            with open('settings.json', 'w') as settings:
-                json.dump(self.settings, settings, indent=4)
-            # Update the option menu
-            if len(self.settings) > 0:
-                self.currentPreset.set(list(self.settings)[0])
-                self.presets['menu'].delete(0, tk.END)
-                for choice in list(self.settings):
-                    self.presets['menu'].add_command(label=choice,
-                        command=tk._setit(self.currentPreset, choice, self.loadPreset))
-            else:
-                self.currentPreset.set("Presets")
-                self.presets['menu'].delete(0, tk.END)
+        # Update settings.json
+        self.settings.pop(key)
+        with open('settings.json', 'w') as settings:
+            json.dump(self.settings, settings, indent=4)
+        # Update the option menu
+        if len(self.settings) > 0:
+            self.currentPreset.set(list(self.settings)[0])
+            self.presets['menu'].delete(0, tk.END)
+            for choice in list(self.settings):
+                self.presets['menu'].add_command(label=choice,
+                    command=tk._setit(self.currentPreset, choice, self.loadPreset))
         else:
-            print("Invalid Name")
+            self.currentPreset.set("Presets")
+            self.presets['menu'].delete(0, tk.END)
 
     def saveData(self):
         with open("damagedata.txt", "a") as dmgdata:

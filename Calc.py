@@ -1,4 +1,4 @@
-from re import split
+import re
 import os
 
 class Calc:
@@ -16,7 +16,8 @@ class Calc:
         self.times: first and last times of data tracking for each player, dict[str: list[int]]
         self.lastLine: index of current last line in game.txt
         """
-        self.names = names
+        # Give longer names priority
+        self.names = sorted(names, key=len, reverse=True)
         self.logpath = logpath
         self.inactivity = inactivity
         self.damagedict = {name: 0 for name in self.names}
@@ -37,7 +38,6 @@ class Calc:
     def updateTime(self, time, name):
         """Updates list, meant to be called for every valid damage line"""
         # If day rollover, add 24 hours
-        print(time)
         if time < self.times[name][0]:
             time += 86400
         # Initial no data case, times haven't been set yet
@@ -86,20 +86,20 @@ class Calc:
         if len(logdata) == 0:
             return
         for line in logdata:
-            damage = ""
-            lineArr = split(" for | damage!", line)
-            # line should be split [junk, dmg, nothing]
-            if len(lineArr) != 3 or "is damaged" in line:
-                continue
+            m = re.search(r"for (\d+) damage!", line)
             try:
-                damage = int(lineArr[1])
-                # 'timestamp - name', so name is always index 2
+                dmg = int(m.group(1))
                 for name in self.names:
-                    if line.split(' - ')[1].startswith(name):
-                        self.updateTime(getTime(line), name) # handle inactivity if applicable
-                        self.damagedict[name] += damage
-                        self.damagelists[name].append(damage)
-            except ValueError:
+                    # Dmg lines always look like 'timestamp - name ...'
+                    # Split at the ' - ', then the second half should start with name
+                    txt = line.split(' - ')[1]
+                    if txt.startswith(name):
+                        # Update damage and time data
+                        self.updateTime(getTime(line), name)
+                        self.damagedict[name] += dmg
+                        self.damagelists[name].append(dmg)
+                        break
+            except (ValueError, AttributeError, IndexError):
                 continue
         return
 
