@@ -93,7 +93,7 @@ class Calc:
                     # Dmg lines always look like 'timestamp - name ...'
                     # Split at the ' - ', then the second half should start with name
                     txt = line.split(' - ')[1]
-                    if txt.startswith(name):
+                    if txt.lower().startswith(name.lower()):
                         # Update damage and time data
                         self.updateTime(getTime(line), name)
                         self.damagedict[name] += dmg

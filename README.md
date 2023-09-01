@@ -21,6 +21,7 @@ The rest should be pretty intuitive once you have the settings configured. "Star
 - The min hit and avg hit stats are a little bit useless since kicks and archery will skew these values. But still, I figure there's no point in excluding them. It's probably better and more visually appealing than unused space, anyways.
 - If you are tracking for more than one character/mob, the inactivity timer is independent for each one.
 - You can edit your inputs while the tracker is running, and your changes won't be loaded until you press the "Start" button again.
+- Name entry is case-insensitive
 ### (Potential) Limitations/Bugs
 - After some high amount of lines (18,000 or something), game.txt turns into game.txt.1, and any existing game.txt.1 turns into game.txt.2, etc, and game.txt resets to a blank test file. This will only be an issue for damage tracking very rarely, however I did add handling that *I believe* works. I did not test it by capturing a game.txt rollover in the wild, instead I fabricated the rollover behavior, however it's possible that I'm wrong and did not do this perfectly, but I'm fairly confident that any issue witht this would be small and go unnoticed.
 - An unavoidable problem is that mobs with the same name all count towards the same damage source in the tracker. This isn't an issue for tracking multiple players, but it is if you're tracking your enemies and you're fighting multiple mobs with the same names.
