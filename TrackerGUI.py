@@ -45,13 +45,14 @@ class TrackerGUI():
         self.names = []
         self.log = ""
         self.graph_widget = None
+        self.graphvar = tk.BooleanVar()
         try:
             with open('settings.json') as settings:
                 self.settings = json.load(settings)
         except FileNotFoundError:
             self.settings = {}
         # Initialize the base GUI:
-        self.root.title("MoM Damage Calc")
+        self.root.title("MoM Damage Tracker")
         self.root.configure(background=grey)
         self.makeNameBox()
         self.makeLogButton()
@@ -63,6 +64,7 @@ class TrackerGUI():
         self.makeStop()
         self.makeTracking()
         self.makeSave()
+        self.makeGraphCheck()
         self.makeLabels()
 
     """Create Buttons"""
@@ -134,6 +136,17 @@ class TrackerGUI():
                activeforeground=hoverText, bg=button_brown, command=self.saveData,
                fg=text_color).grid(column=3, row=1)
 
+    def makeGraphCheck(self):
+        tk.Label(self.root, text="Display\nGraph", bg=grey, fg=text_color).grid(column=4, row=1, sticky='w')
+        settings = self.settings[self.currentPreset.get()]
+        try:
+            self.graphvar.set(settings[3])
+        except IndexError:
+            self.graphvar.set(True)
+
+        self.graphbutton = tk.Checkbutton(self.root, bg=grey, activebackground=grey, activeforeground="white", variable=self.graphvar)
+        self.graphbutton.grid(column=4, row=1, sticky='e')
+
     def makeLabels(self):
         # Initialize output labels, but not the cells:
         self.statlabels = ["Name", "Damage", "Max Hit", "Time (s)", "DPS", "DPM"]
@@ -178,8 +191,9 @@ class TrackerGUI():
         self.track = True
         self.calc.lastLine = self.calc.getLastLine()
 
-        self.regr_magic = RegrMagic(self.calc)
-        self.anim = self.make_graphs()
+        if self.graphvar.get():
+            self.regr_magic = RegrMagic(self.calc)
+            self.anim = self.make_graphs()
  
         self.tracklabel.config(text="Tracking Dmg", fg="green2")
         self.update()
@@ -200,7 +214,7 @@ class TrackerGUI():
                 raise KeyError
             # Otherwise, add the new preset to the json
             key = str(self.namebox.get())
-            self.settings[key] = [key, self.log, str(self.inactivity.get())]
+            self.settings[key] = [key, self.log, str(self.inactivity.get()), self.graphvar.get()]
             with open('settings.json', 'w') as settings:
                 json.dump(self.settings, settings, indent=4)
         except KeyError:
@@ -226,6 +240,11 @@ class TrackerGUI():
         # inactivity threshold:
         self.inactivity.delete(0, tk.END)
         self.inactivity.insert(0, settings[2])
+        # graph var:
+        try:
+            self.graphvar.set(settings[3])
+        except IndexError:
+            self.graphvar.set(True)
 
     def deletePreset(self):
         """Delete current preset from settings.json."""
