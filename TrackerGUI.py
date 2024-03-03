@@ -40,7 +40,7 @@ class TrackerGUI():
         self.root = tk.Tk()
         self.calc = Calc([], '')
         self.track = False
-        self.datalabels = {}
+        self.datacells = {}
         self.namelabels = {}
         self.names = []
         self.log = ""
@@ -84,7 +84,7 @@ class TrackerGUI():
         self.inactivity.grid(column=2, row=0, sticky="e")
         self.inactivity.insert(0, 10)
         self.inactivityLabel = tk.Label(self.root, width=8, bg=grey,
-                                        fg=text_color, text="Threshold:")
+                                        fg=text_color, font=("Arial", 8),text="Inactivity\nThreshold:")
         self.inactivityLabel.grid(column=2, row=0, sticky="w")
 
     def makeSaveSettings(self):
@@ -118,28 +118,27 @@ class TrackerGUI():
     def makeStart(self):
         tk.Button(self.root, text='Start', activebackground=hoverBG,
                activeforeground=hoverText, bg=button_brown, command=self.start,
-               fg=text_color, width=5).grid(column=6, row=0, sticky=tk.W)
+               fg=text_color, width=8).grid(column=0, row=1)
 
     def makeStop(self):
         tk.Button(self.root, text='Stop', activebackground=hoverBG,
                activeforeground=hoverText, bg=button_brown, command=self.interrupt,
-               fg=text_color, width=4).grid(column=6, row=0, sticky=tk.E)
+               fg=text_color, width=8).grid(column=1, row=1)
     def makeTracking(self):
         self.tracklabel = tk.Label(self.root, text='Not Tracking',
                                 bg=grey, fg="red")
-        self.tracklabel.grid(column=7, row=0)
+        self.tracklabel.grid(column=2, row=1)
 
     def makeSave(self):
         tk.Button(self.root, text="Save Data", activebackground=hoverBG,
                activeforeground=hoverText, bg=button_brown, command=self.saveData,
-               fg=text_color).grid(column=8, row=0)
+               fg=text_color).grid(column=3, row=1)
 
     def makeLabels(self):
         # Initialize output labels, but not the cells:
-        self.statlabels = ["Name", "Damage", "# Hits", "Min Hit", "Max Hit", "Avg Hit",
-                   "Time (s)", "DPS", "DPM"]
+        self.statlabels = ["Name", "Damage", "Max Hit", "Time (s)", "DPS", "DPM"]
         for i, txt in enumerate(self.statlabels):
-            tk.Label(self.root, text=txt, bg=grey, fg=text_color, width=12).grid(column=i, row=1)
+            tk.Label(self.root, text=txt, bg=grey, fg=text_color, width=12).grid(column=i, row=2)
 
     """Button Callback Functions"""
     def getLog(self):
@@ -152,32 +151,29 @@ class TrackerGUI():
         # Destroy previous cells:
         for name in self.calc.names:
             self.namelabels[name].destroy()
-            for lab in self.datalabels[name]:
+            for lab in self.datacells[name]:
                 lab.destroy()
         if self.graph_widget:
             self.graph_widget.destroy()
         # Initialize a new calc:
         self.names = self.namebox.get().split(', ')
         self.calc = Calc(self.names, self.log, int(self.inactivity.get()))
-        # Initialize/format output cells:
-        self.datalabels = {name: [tk.Label(self.root, width=12, bg=grey, fg=text_color,
+        self.namecolors = {name: "#"+''.join([random.choice('0123456789ABCDEF')
+                    for _ in range(6)]) for name in self.names}
+        # Initialize/format output:
+        self.namelabels = {name: tk.Label(self.root,width=12, bg=grey, fg=self.namecolors[name], anchor=tk.W) for name in self.names}
+        self.datacells = {name: [tk.Label(self.root, width=12, bg=grey, fg=text_color,
                                 highlightbackground='grey', highlightthickness=1,
                                 anchor=tk.E)
                                 for _ in self.statlabels[1:]]
                                 for name in self.names}
 
-        [[label.grid(column=i+1, row=2+j) for i, label in enumerate(self.datalabels[name])] for j, name in enumerate(self.names)]
-        # Initialize/format name labels:
-        self.colors = {name: "#"+''.join([random.choice('0123456789ABCDEF')
-                    for _ in range(6)]) for name in self.names}
-        self.namelabels = {name: tk.Label(self.root,width=12, bg=grey, fg=self.colors[name], anchor=tk.W) for name in self.names}
-        [self.namelabels[name].grid(column=0, row=2+i) for i, name in enumerate(self.namelabels)]
-
-        # Insert text into labels:
-        for name in self.names:
+        for r, name in enumerate(self.names):
+            self.namelabels[name].grid(column=0, row=3+r)
             self.namelabels[name]['text'] = name
-            for lab in self.datalabels[name]:
-                lab['text'] = 0
+            for c, cell in enumerate(self.datacells[name]):
+                cell.grid(column=c+1, row=3+r)
+                cell['text'] = 0
 
         self.track = True
         self.calc.lastLine = self.calc.getLastLine()
@@ -253,7 +249,7 @@ class TrackerGUI():
         with open("damagedata.txt", "a") as dmgdata:
             for name in self.names:
                 dmgdata.write(f"{self.namelabels[name].cget('text')} ")
-                for lab in self.datalabels[name]:
+                for lab in self.datacells[name]:
                     dmgdata.write(f"{str(lab.cget('text'))} ")
                 dmgdata.write("\n")
 
@@ -275,27 +271,29 @@ class TrackerGUI():
     def displayStats(self, name):
         """Displays current state of the calc to the GUI for one name"""
         data = self.calc.getCurStats(name)
-        for d, lab in zip(data, self.datalabels[name]):
+        for d, lab in zip(data, self.datacells[name]):
             lab['text'] = d
 
     def make_graphs(self):
-        fig, ax = plt.subplots()
-        fig.set_size_inches(8.5, 2)
-        fig.tight_layout(pad=4)
-        ax.set_ylabel("DPM")
+        fig = plt.figure(figsize=(5, 2))
+        fig.suptitle("DPM Vs Time")
+        ax = plt.subplot()
+        # fig.tight_layout(pad=1)
+        # ax.set_ylabel("DPM")
+        # ax.set_xlabel("Time (s)")
         plt.grid(visible=True, which='major')
-        plt.tick_params(
-            axis='x',          # changes apply to the x-axis
-            which='both',      # both major and minor ticks are affected
-            bottom=False,      # ticks along the bottom edge are off
-            top=False,         # ticks along the top edge are off
-            labelbottom=False) # labels along the bottom edge are off
-        [ax.plot([], [], label=name, color=self.colors[name]) for name in self.names]
+        # plt.tick_params(
+        #     axis='x',          # changes apply to the x-axis
+        #     which='both',      # both major and minor ticks are affected
+        #     bottom=False,      # ticks along the bottom edge are off
+        #     top=False,         # ticks along the top edge are off
+        #     labelbottom=False) # labels along the bottom edge are off
+        [ax.plot([], [], label=name, color=self.namecolors[name]) for name in self.names]
 
         canvas = FigureCanvasTkAgg(fig, master=self.root)
         canvas.draw()
         self.graph_widget = canvas.get_tk_widget()
-        self.graph_widget.grid(column=0, row=3+len(self.names), columnspan=9)
+        self.graph_widget.grid(column=0, row=3+len(self.names), columnspan=6, padx=(50, 0))
 
         x = []
         y = {name: [] for name in self.names}
@@ -304,7 +302,7 @@ class TrackerGUI():
             x.append(args[0])
             for name in self.names:
                 y[name].append(args[1][name])
-            return [ax.plot(x, y[name], label=name, color=self.colors[name]) for name in self.names]
+            return [ax.plot(x, y[name], label=name, color=self.namecolors[name]) for name in self.names]
 
         return animation.FuncAnimation(fig, animate, frames=self.frames, interval=1000, cache_frame_data=False, blit=False)
 

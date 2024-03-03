@@ -81,15 +81,12 @@ class Calc:
     def elapsedTime(self, name):
         # Returns time elapsed over this tracking period thus far
         return self.times[name][1] - self.times[name][0]
-    
+
     def getCurStats(self, name):
         dmglist = self.damagelists[name]
         elapsedTime = self.elapsedTime(name)
         data = [self.damagedict[name],
-                len(dmglist),
-                min(dmglist),
                 max(dmglist),
-                self.damagedict[name]//len(dmglist),
                 elapsedTime,
                 int(self.damagedict[name]) // (elapsedTime)
                     if elapsedTime > 0 else 0,
