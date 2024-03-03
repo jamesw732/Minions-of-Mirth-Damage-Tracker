@@ -83,17 +83,17 @@ class TrackerGUI():
 
     def makeThreshold(self):
         self.inactivity = tk.Entry(self.root, width=4, bg=grey, fg="cyan", insertbackground='cyan')
-        self.inactivity.grid(column=2, row=0, sticky="e")
+        self.inactivity.grid(column=2, row=1, sticky="e")
         self.inactivity.insert(0, 10)
-        self.inactivityLabel = tk.Label(self.root, width=8, bg=grey,
-                                        fg=text_color, font=("Arial", 8),text="Inactivity\nThreshold:")
-        self.inactivityLabel.grid(column=2, row=0, sticky="w")
+        self.inactivityLabel = tk.Label(self.root, width=8, bg=grey, font=("Arial", 8),
+                                        fg=text_color,text="Inactivity\nThreshold")
+        self.inactivityLabel.grid(column=2, row=1, sticky="w")
 
     def makeSaveSettings(self):
         self.save = tk.Button(self.root, text="Save Settings", activebackground=hoverBG,
                activeforeground=hoverText, bg=button_brown, command=self.savePreset,
                fg=text_color)
-        self.save.grid(column=3, row=0)
+        self.save.grid(column=4, row=0)
 
     def makePresetDropdown(self):
         if self.settings:
@@ -106,8 +106,8 @@ class TrackerGUI():
                         command=self.loadPreset)
         self.presets.config(bg=button_brown, activebackground=button_brown,
                         fg=text_color, activeforeground = text_color,
-                        highlightthickness=0, width=6, anchor=tk.W)
-        self.presets.grid(column=4, row=0, sticky=tk.W, padx=5, pady=5)
+                        highlightthickness=0, width=20, anchor=tk.W)
+        self.presets.grid(column=2, row=0, padx=5, pady=5, columnspan=2)
         if len(self.settings) > 0:
             self.loadPreset()
 
@@ -129,15 +129,15 @@ class TrackerGUI():
     def makeTracking(self):
         self.tracklabel = tk.Label(self.root, text='Not Tracking',
                                 bg=grey, fg="red")
-        self.tracklabel.grid(column=2, row=1)
+        self.tracklabel.grid(column=5, row=1)
 
     def makeSave(self):
         tk.Button(self.root, text="Save Data", activebackground=hoverBG,
                activeforeground=hoverText, bg=button_brown, command=self.saveData,
-               fg=text_color).grid(column=3, row=1)
+               fg=text_color).grid(column=4, row=1)
 
     def makeGraphCheck(self):
-        tk.Label(self.root, text="Display\nGraph", bg=grey, fg=text_color).grid(column=4, row=1, sticky='w')
+        tk.Label(self.root, text="Display\nGraph", bg=grey, fg=text_color, font=("Arial",8)).grid(column=3, row=1, sticky='w', padx=(15, 0))
         settings = self.settings[self.currentPreset.get()]
         try:
             self.graphvar.set(settings[3])
@@ -145,7 +145,7 @@ class TrackerGUI():
             self.graphvar.set(True)
 
         self.graphbutton = tk.Checkbutton(self.root, bg=grey, activebackground=grey, activeforeground="white", variable=self.graphvar)
-        self.graphbutton.grid(column=4, row=1, sticky='e')
+        self.graphbutton.grid(column=3, row=1, sticky='e')
 
     def makeLabels(self):
         # Initialize output labels, but not the cells:
