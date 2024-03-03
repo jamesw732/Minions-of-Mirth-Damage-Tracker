@@ -1,0 +1,13 @@
+damagedata.txt
+exampledamage.txt
+game.txt
+game.txt.1
+graphexperiments.py
+minimal_graph.py
+settings.json
+testcode.py
+tkgraphs.py
+todo.txt
+DamageTracker.spec
+build/*
+__pycache__/*
