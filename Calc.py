@@ -13,6 +13,7 @@ class Calc:
         self.inactivity: inactivity timer threshold, resets if time between two valid damage lines is higher than this.
         self.damage: total damage dealt while tracking, dict[str: int]
         self.damagelist: list of all damage dealt, list[int]
+        self.dpmhistory: list containing DPM upon each update, for use in charts
         self.times: first and last times of data tracking for each player, dict[str: list[int]]
         self.lastLine: index of current last line in game.txt
         """
@@ -22,6 +23,7 @@ class Calc:
         self.inactivity = inactivity
         self.damagedict = {name: 0 for name in self.names}
         self.damagelists = {name: [] for name in self.names}
+        self.dpm_by_name = {name: 0 for name in self.names}
         self.times = {name: [-1, -1] for name in self.names}
         if os.path.exists(self.logpath):
             with open(self.logpath) as log:
@@ -80,7 +82,23 @@ class Calc:
         # Returns time elapsed over this tracking period thus far
         return self.times[name][1] - self.times[name][0]
     
-    def updateStats(self):
+    def getCurStats(self, name):
+        dmglist = self.damagelists[name]
+        elapsedTime = self.elapsedTime(name)
+        data = [self.damagedict[name],
+                len(dmglist),
+                min(dmglist),
+                max(dmglist),
+                self.damagedict[name]//len(dmglist),
+                elapsedTime,
+                int(self.damagedict[name]) // (elapsedTime)
+                    if elapsedTime > 0 else 0,
+                int(self.damagedict[name]) // (elapsedTime) * 60
+                    if elapsedTime > 0 else 0]
+        self.dpm_by_name[name] = data[-1]
+        return data
+
+    def readDmgData(self):
         # Given lines from game.txt, calculate damage stats
         logdata = self.getLines()
         if len(logdata) == 0:

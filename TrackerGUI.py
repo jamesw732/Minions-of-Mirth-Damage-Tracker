@@ -2,8 +2,12 @@ import tkinter as tk
 from tkinter import filedialog
 from colors import *
 from Calc import *
+from graphs import *
 import json
-
+import matplotlib as mpl
+from matplotlib import animation
+import matplotlib.pyplot as plt
+import random
 
 class TrackerGUI(tk.Tk):
     """GUI Client Code
@@ -131,9 +135,46 @@ class TrackerGUI(tk.Tk):
 
         self.track = True
         self.calc.lastLine = self.calc.getLastLine()
+
+        self.make_graphs()
  
         self.tracklabel.config(text="Tracking Dmg", fg="green2")
         self.update()
+
+    def make_graphs(self):
+        colors = {name: "#"+''.join([random.choice('0123456789ABCDEF') for _ in range(6)])
+             for name in self.names}
+        plt.ion()
+        regr_magic = RegrMagic(self.calc)
+
+        def frames():
+            while True:
+                yield regr_magic()
+
+        fig, ax = plt.subplots()
+        fig.set_size_inches(8.25, 2)
+        plt.tight_layout(pad=3)
+        plt.xlabel("Time (s)")
+        plt.ylabel("DPM")
+        graphs = [plt.plot([], [], label=name, color=colors[name]) for name in self.names]
+        plt.legend()
+
+        # canvas = mpl.backends.backend_tkagg.FigureCanvasTkAgg(fig, master=tk.Tk())
+        # canvas.get_tk_widget().grid(column=0, row=2 + len(self.names))
+
+        x = [0]
+        y = {name: [0] for name in self.names}
+
+        def animate(args):
+            x.append(args[0])
+            for name in self.names:
+                y[name].append(args[1][name])
+            return [plt.plot(x, y[name], label=name, color=colors[name]) for name in self.names]
+
+        anim = animation.FuncAnimation(fig, animate, frames=frames, interval=1000, cache_frame_data=False)
+        plt.draw()
+        plt.pause(0.001)
+        plt.show()
 
     def update(self):
         """Update the state of the calc and GUI every second"""
@@ -143,32 +184,21 @@ class TrackerGUI(tk.Tk):
         # line of game.txt differ, update stats.
         lastline = self.calc.getLastLine()
         if lastline != self.calc.lastLine:
-            self.calc.updateStats()
+            self.calc.readDmgData()
             for name in self.names:
                 if self.calc.damagedict[name] > 0:
                     self.displayStats(name)
         self.after(1000, self.update)
 
     def displayStats(self, name):
-        """Displays current state of the calc to the GUI"""
-        dmglist = self.calc.damagelists[name]
-        elapsedTime = self.calc.elapsedTime(name)
-        data = [self.calc.damagedict[name],
-                len(dmglist),
-                min(dmglist),
-                max(dmglist),
-                self.calc.damagedict[name]//len(dmglist),
-                elapsedTime,
-                int(self.calc.damagedict[name]) // (elapsedTime)
-                    if elapsedTime > 0 else 'N/A',
-                int(self.calc.damagedict[name]) // (elapsedTime) * 60
-                    if elapsedTime > 0 else 'N/A']
-
+        """Displays current state of the calc to the GUI for one name"""
+        data = self.calc.getCurStats(name)
         for d, lab in zip(data, self.datalabels[name]):
             lab['text'] = d
 
     def interrupt(self):
         """Stop update() from recursing, called when 'stop' clicked"""
+        plt.close('all')
         self.track = False
         self.tracklabel.config(text="Not Tracking", fg="red")
 
