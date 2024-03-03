@@ -175,7 +175,6 @@ class TrackerGUI():
         fig.set_size_inches(8.5, 2)
         fig.tight_layout(pad=4)
         ax.set_ylabel("DPM")
-        ax.set_ylim(0, 500000)
         plt.grid(visible=True, which='major')
         plt.tick_params(
             axis='x',          # changes apply to the x-axis
