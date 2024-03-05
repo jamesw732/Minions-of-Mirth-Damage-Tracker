@@ -51,6 +51,7 @@ class TrackerGUI():
                 self.settings = json.load(settings)
         except FileNotFoundError:
             self.settings = {}
+        self.currentPreset = tk.StringVar(self.root, "")
         # Initialize the base GUI:
         self.root.title("MoM Damage Tracker")
         self.root.configure(background=grey)
@@ -97,9 +98,9 @@ class TrackerGUI():
 
     def makePresetDropdown(self):
         if self.settings:
-            self.currentPreset = tk.StringVar(self.root, list(self.settings)[0])
+            self.currentPreset.set(list(self.settings)[0])
         else:
-            self.currentPreset = tk.StringVar(self.root, "Presets")
+            self.currentPreset.set("Presets")
         self.presets = tk.OptionMenu(self.root,
                         self.currentPreset,
                         *self.settings.keys() if self.settings else ["Presets"],
@@ -138,10 +139,10 @@ class TrackerGUI():
 
     def makeGraphCheck(self):
         tk.Label(self.root, text="Display\nGraph", bg=grey, fg=text_color, font=("Arial",8)).grid(column=3, row=1, sticky='w', padx=(15, 0))
-        settings = self.settings[self.currentPreset.get()]
+        settings = self.settings.get(self.currentPreset.get())
         try:
             self.graphvar.set(settings[3])
-        except IndexError:
+        except (IndexError, TypeError):
             self.graphvar.set(True)
 
         self.graphbutton = tk.Checkbutton(self.root, bg=grey, activebackground=grey, activeforeground="white", variable=self.graphvar)
