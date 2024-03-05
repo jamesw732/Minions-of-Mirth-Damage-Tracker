@@ -84,11 +84,11 @@ class TrackerGUI():
 
     def makeThreshold(self):
         self.inactivity = tk.Entry(self.root, width=4, bg=grey, fg="cyan", insertbackground='cyan')
-        self.inactivity.grid(column=2, row=1, sticky="e")
+        self.inactivity.grid(column=0, row=1, sticky="e")
         self.inactivity.insert(0, 10)
         self.inactivityLabel = tk.Label(self.root, width=8, bg=grey, font=("Arial", 8),
                                         fg=text_color,text="Inactivity\nThreshold")
-        self.inactivityLabel.grid(column=2, row=1, sticky="w")
+        self.inactivityLabel.grid(column=0, row=1, sticky="w")
 
     def makeSaveSettings(self):
         self.save = tk.Button(self.root, text="Save Settings", activebackground=hoverBG,
@@ -119,14 +119,14 @@ class TrackerGUI():
         self.delete.grid(column=5, row=0)
 
     def makeStart(self):
-        tk.Button(self.root, text='Start', activebackground=hoverBG,
+        tk.Button(self.root, text='START', activebackground=hoverBG,
                activeforeground=hoverText, bg=button_brown, command=self.start,
-               fg=text_color, width=8).grid(column=0, row=1)
+               fg=text_color, width=10).grid(column=2, row=1)
 
     def makeStop(self):
-        tk.Button(self.root, text='Stop', activebackground=hoverBG,
+        tk.Button(self.root, text='STOP', activebackground=hoverBG,
                activeforeground=hoverText, bg=button_brown, command=self.interrupt,
-               fg=text_color, width=8).grid(column=1, row=1)
+               fg=text_color, width=10).grid(column=3, row=1)
     def makeTracking(self):
         self.tracklabel = tk.Label(self.root, text='Not Tracking',
                                 bg=grey, fg="red")
@@ -138,7 +138,7 @@ class TrackerGUI():
                fg=text_color).grid(column=4, row=1)
 
     def makeGraphCheck(self):
-        tk.Label(self.root, text="Display\nGraph", bg=grey, fg=text_color, font=("Arial",8)).grid(column=3, row=1, sticky='w', padx=(15, 0))
+        tk.Label(self.root, text="Display\nGraph", bg=grey, fg=text_color, font=("Arial",8)).grid(column=1, row=1, sticky='w', padx=(15, 0))
         settings = self.settings.get(self.currentPreset.get())
         try:
             self.graphvar.set(settings[3])
@@ -146,7 +146,7 @@ class TrackerGUI():
             self.graphvar.set(True)
 
         self.graphbutton = tk.Checkbutton(self.root, bg=grey, activebackground=grey, activeforeground="white", variable=self.graphvar)
-        self.graphbutton.grid(column=3, row=1, sticky='e')
+        self.graphbutton.grid(column=1, row=1, sticky='e')
 
     def makeLabels(self):
         # Initialize output labels, but not the cells:
@@ -172,10 +172,9 @@ class TrackerGUI():
         # Initialize a new calc:
         self.names = self.namebox.get().split(', ')
         self.calc = Calc(self.names, self.log, int(self.inactivity.get()))
-        self.namecolors = {name: "#"+''.join([random.choice('0123456789ABCDEF')
-                    for _ in range(6)]) for name in self.names}
+        self.namecolors = {name: colorwheel[i] for i, name in enumerate(self.names)}
         # Initialize/format output:
-        self.namelabels = {name: tk.Label(self.root,width=12, bg=grey, fg=self.namecolors[name], anchor=tk.W) for name in self.names}
+        self.namelabels = {name: tk.Label(self.root,width=12, bg=grey, fg=self.namecolors[name]) for name in self.names}
         self.datacells = {name: [tk.Label(self.root, width=12, bg=grey, fg=text_color,
                                 highlightbackground='grey', highlightthickness=1,
                                 anchor=tk.E)
@@ -295,25 +294,19 @@ class TrackerGUI():
             lab['text'] = d
 
     def make_graphs(self):
-        fig = plt.figure(figsize=(5, 2))
+        fig = plt.figure(figsize=(5, 2), constrained_layout=True)
         fig.suptitle("DPM Vs Time")
         ax = plt.subplot()
-        # fig.tight_layout(pad=1)
-        # ax.set_ylabel("DPM")
-        # ax.set_xlabel("Time (s)")
+        ax.set_ylabel("DPM")
+        ax.set_xlabel("Time (s)")
+        ax.ticklabel_format(style='plain')
         plt.grid(visible=True, which='major')
-        # plt.tick_params(
-        #     axis='x',          # changes apply to the x-axis
-        #     which='both',      # both major and minor ticks are affected
-        #     bottom=False,      # ticks along the bottom edge are off
-        #     top=False,         # ticks along the top edge are off
-        #     labelbottom=False) # labels along the bottom edge are off
         [ax.plot([], [], label=name, color=self.namecolors[name]) for name in self.names]
 
         canvas = FigureCanvasTkAgg(fig, master=self.root)
         canvas.draw()
         self.graph_widget = canvas.get_tk_widget()
-        self.graph_widget.grid(column=0, row=3+len(self.names), columnspan=6, padx=(50, 0))
+        self.graph_widget.grid(column=0, row=3+len(self.names), columnspan=6)
 
         x = []
         y = {name: [] for name in self.names}
