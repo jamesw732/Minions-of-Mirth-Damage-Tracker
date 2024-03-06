@@ -4,4 +4,4 @@ text_color = "#8c8a84"
 clicked = "#3a3428"
 hoverText = "#c9c86f"
 hoverBG = "#544d3a"
-colorwheel = ['red', 'blue', 'green', 'cyan', 'salmon', 'white', 'purple', 'orange', 'yellow', 'PaleTurquoise', 'gold']
+colorwheel = ['red', 'royalblue', 'green', 'cyan', 'salmon', 'white', 'orange', 'yellow', 'lawngreen', 'magenta']
