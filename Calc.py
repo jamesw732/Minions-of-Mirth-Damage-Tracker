@@ -22,7 +22,8 @@ class Calc:
         self.logpath = logpath
         self.inactivity = inactivity
         self.damagedict = {name: 0 for name in self.names}
-        self.damagelists = {name: [] for name in self.names}
+        # self.damagelists = {name: [] for name in self.names}
+        self.maxdamagedict = {name: 0 for name in self.names}
         self.dpm_by_name = {name: 0 for name in self.names}
         self.times = {name: [-1, -1] for name in self.names}
         if os.path.exists(self.logpath):
@@ -34,7 +35,7 @@ class Calc:
     def reset(self):
         # Resets damage and time data
         self.damagedict = {name: 0 for name in self.names}
-        self.damagelists = {name: [] for name in self.names}
+        self.maxdamagedict = {name: 0 for name in self.names}
         self.times = {name: [-1, -1] for name in self.names}
     
     def updateTime(self, time, name):
@@ -83,10 +84,9 @@ class Calc:
         return self.times[name][1] - self.times[name][0]
 
     def getCurStats(self, name):
-        dmglist = self.damagelists[name]
         elapsedTime = self.elapsedTime(name)
         data = [self.damagedict[name],
-                max(dmglist),
+                self.maxdamagedict[name],
                 elapsedTime,
                 int(self.damagedict[name]) // (elapsedTime)
                     if elapsedTime > 0 else 0,
@@ -112,7 +112,8 @@ class Calc:
                         # Update damage and time data
                         self.updateTime(getTime(line), name)
                         self.damagedict[name] += dmg
-                        self.damagelists[name].append(dmg)
+                        if dmg > self.maxdamagedict[name]:
+                            self.maxdamagedict[name] = dmg
                         break
             except (ValueError, AttributeError, IndexError):
                 continue
