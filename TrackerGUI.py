@@ -312,9 +312,21 @@ class TrackerGUI():
         y = {name: [] for name in self.names}
 
         def animate(args):
+            nonlocal x
+            nonlocal y
             x.append(args[0])
+            max_len = 100
+            if len(x) > max_len:
+                diff = len(x) - max_len
+                x = x[diff:]
+                ax.cla()
+                ax.ticklabel_format(style='plain')
+                plt.grid(visible=True, which='major')
             for name in self.names:
                 y[name].append(args[1][name])
+                if len(y[name]) > max_len:
+                    diff = len(y[name]) - max_len
+                    y[name] = y[name][diff:]
             return [ax.plot(x, y[name], label=name, color=self.namecolors[name]) for name in self.names]
 
         return animation.FuncAnimation(fig, animate, frames=self.frames, interval=1000, cache_frame_data=False, blit=False)
